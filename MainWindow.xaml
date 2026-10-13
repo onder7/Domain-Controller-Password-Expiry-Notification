@@ -1,0 +1,293 @@
+﻿<Window x:Class="PasswordExpiryNotification.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Password Expiry Notification"
+        Icon="pack://application:,,,/Assets/diagram.png"
+        Height="720" Width="1100"
+        MinHeight="560" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F7FA">
+    <DockPanel Margin="16">
+        <Border DockPanel.Dock="Top" Background="#1F4E79" CornerRadius="6" Padding="16,12" Margin="0,0,0,12">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="pack://application:,,,/Assets/diagram.png" Width="40" Height="40"
+                           Margin="0,0,12,0" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Password Expiry Notification" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+                        <TextBlock Text="{Binding StatusText}" Foreground="#D6E4F0" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <ProgressBar Width="220" Height="10" HorizontalAlignment="Right" VerticalAlignment="Center"
+                             Value="{Binding ProgressValue}" Maximum="100"/>
+            </Grid>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#D0D7DE" BorderThickness="1"
+                CornerRadius="6" Padding="8" Margin="0,12,0,0" Height="140">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Canlı Log" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <ListBox ItemsSource="{Binding LogEntries}" FontFamily="Consolas" FontSize="12"
+                         BorderThickness="0" Background="Transparent"/>
+            </DockPanel>
+        </Border>
+
+        <TabControl SelectedIndex="{Binding SelectedTabIndex}" Background="Transparent" BorderThickness="0">
+            <!-- Tarama -->
+            <TabItem Header="1. Tarama">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="AD'yi Tara" Command="{Binding ScanVm.ScanCommand}" Padding="14,6" Margin="0,0,8,0"/>
+                        <Button Content="Tümünü Seç" Command="{Binding ScanVm.SelectAllCommand}" Padding="10,6" Margin="0,0,8,0"/>
+                        <Button Content="Seçimi Kaldır" Command="{Binding ScanVm.SelectNoneCommand}" Padding="10,6" Margin="0,0,8,0"/>
+                        <Button Content="Önizlemeye Aktar" Command="{Binding ScanVm.SendSelectedToPreviewCommand}" Padding="10,6" Margin="0,0,8,0"/>
+                        <Button Content="CSV Export" Command="{Binding ScanVm.ExportCsvCommand}" Padding="10,6"/>
+                    </StackPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding ScannedUsers}" AutoGenerateColumns="False"
+                              IsReadOnly="False" CanUserAddRows="False" HeadersVisibility="Column"
+                              AlternatingRowBackground="#F0F4F8">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                            <DataGridTextColumn Header="Kullanıcı Adı" Binding="{Binding DisplayName}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Hesap" Binding="{Binding UserName}" Width="120" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="180" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Son Değişim" Binding="{Binding LastPasswordSet, StringFormat=dd.MM.yyyy}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Dolma" Binding="{Binding PasswordExpiryDate, StringFormat=dd.MM.yyyy}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Kalan Gün" Binding="{Binding DaysToExpire}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Eşik" Binding="{Binding MatchedWarningDay}" Width="60" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!-- Uyarı Önizleme -->
+            <TabItem Header="2. Uyarı Önizleme">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,8">
+                        <TextBlock Text="{Binding PreviewVm.SummaryText}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="İptal / Taramaya Dön" Command="{Binding PreviewVm.CancelToScanCommand}" Padding="10,6" Margin="0,0,8,0"/>
+                            <Button Content="Onayla ve Gönder" Command="{Binding PreviewVm.ConfirmAndSendCommand}"
+                                    Padding="14,6" Background="#1F4E79" Foreground="White"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding PreviewUsers}"
+                              SelectedItem="{Binding PreviewVm.SelectedUser}"
+                              AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column"
+                              SelectionChanged="PreviewGrid_OnSelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                            <DataGridTextColumn Header="Kullanıcı" Binding="{Binding DisplayName}" Width="*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="E-posta" Binding="{Binding Email}" Width="180" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Kalan Gün" Binding="{Binding DaysToExpire}" Width="80" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Dolma" Binding="{Binding PasswordExpiryDate, StringFormat=dd.MM.yyyy}" Width="100" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Uyarı Günü" Binding="{Binding MatchedWarningDay}" Width="80" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+                        <GroupBox Header="Konu" Margin="0,0,8,0">
+                            <TextBox Text="{Binding PreviewVm.PreviewSubject}" TextWrapping="Wrap" IsReadOnly="True" Margin="4"/>
+                        </GroupBox>
+                        <GroupBox Header="Mail Önizleme (HTML)" Grid.Column="1">
+                            <TextBox Text="{Binding PreviewVm.PreviewBody}" TextWrapping="Wrap" AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontFamily="Consolas" FontSize="11" Margin="4"/>
+                        </GroupBox>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Ayarlar -->
+            <TabItem Header="3. Ayarlar">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="8">
+                    <StackPanel>
+                        <GroupBox Header="Kurum" Padding="10" Margin="0,0,0,10">
+                            <TextBox Text="{Binding SettingsVm.Settings.CompanyName, UpdateSourceTrigger=PropertyChanged}"/>
+                        </GroupBox>
+
+                        <GroupBox Header="SMTP" Padding="10" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Sunucu" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="1" Text="{Binding SettingsVm.Settings.Smtp.Server, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,6"/>
+                                <TextBlock Grid.Column="2" Text="Port" VerticalAlignment="Center" Margin="0,0,8,6"/>
+                                <TextBox Grid.Column="3" Text="{Binding SettingsVm.Settings.Smtp.Port, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="1" Text="Gönderen" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SettingsVm.Settings.Smtp.FromAddress, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="2" Text="Kullanıcı" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SettingsVm.Settings.Smtp.Username, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,6"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="Şifre" VerticalAlignment="Center" Margin="0,0,8,6"/>
+                                <PasswordBox Grid.Row="2" Grid.Column="3" Name="SmtpPasswordBox" Margin="0,0,0,6" PasswordChanged="SmtpPasswordBox_OnPasswordChanged"/>
+                                <CheckBox Grid.Row="3" Grid.Column="1" Content="SSL/TLS kullan" IsChecked="{Binding SettingsVm.Settings.Smtp.UseSsl}" Margin="0,0,0,8"/>
+                                <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal">
+                                    <Button Content="SMTP Bağlantı Testi" Command="{Binding SettingsVm.TestSmtpCommand}" Padding="10,5" Margin="0,0,8,0"/>
+                                    <TextBox Width="200" Text="{Binding SettingsVm.TestEmailAddress, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0" VerticalContentAlignment="Center"/>
+                                    <Button Content="Kendime Test Maili" Command="{Binding SettingsVm.SendTestMailCommand}" Padding="10,5"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="Uyarı Günleri (seçilebilir)" Padding="10" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Yalnızca işaretli eşikler için bildirim yapılır." Margin="0,0,0,8" Foreground="#555"/>
+                                <ItemsControl ItemsSource="{Binding SettingsVm.Settings.WarningDayOptions}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding DisplayText}" IsChecked="{Binding IsSelected}" Margin="0,0,16,8"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Width="80" Text="{Binding SettingsVm.CustomWarningDayText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
+                                    <Button Content="Özel Gün Ekle" Command="{Binding SettingsVm.AddWarningDayCommand}" Padding="10,5"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="AD Politikası" Padding="10" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Varsayılan şifre yaşı (gün)" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="1" Text="{Binding SettingsVm.Settings.AdPolicy.DefaultMaxPasswordAgeDays}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="1" Text="OU filtresi" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SettingsVm.Settings.AdPolicy.OrganizationalUnitFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"/>
+                                <TextBlock Grid.Row="2" Text="Güvenlik grubu filtresi" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SettingsVm.Settings.AdPolicy.SecurityGroupFilter, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"/>
+                                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                                    <CheckBox Content="FGPP kullan" IsChecked="{Binding SettingsVm.Settings.AdPolicy.UseFineGrainedPasswordPolicy}" Margin="0,0,12,0"/>
+                                    <CheckBox Content="Boş e-postayı hariç tut" IsChecked="{Binding SettingsVm.Settings.AdPolicy.ExcludeEmptyEmail}" Margin="0,0,12,0"/>
+                                    <CheckBox Content="PasswordNeverExpires hariç" IsChecked="{Binding SettingsVm.Settings.AdPolicy.ExcludePasswordNeverExpires}"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="E-posta Şablonu (uygulamadan düzenlenir)" Padding="10" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Konu" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SettingsVm.Settings.EmailTemplate.Subject, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+                                <TextBlock Text="HTML Gövde" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SettingsVm.Settings.EmailTemplate.HtmlBody, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True" TextWrapping="Wrap" Height="160"
+                                         VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Margin="0,0,0,8"/>
+                                <WrapPanel Margin="0,0,0,8">
+                                    <Button Content="{}{Name}" Command="{Binding SettingsVm.InsertPlaceholderCommand}" CommandParameter="{}{Name}" Margin="0,0,6,6" Padding="8,4"/>
+                                    <Button Content="{}{UserName}" Command="{Binding SettingsVm.InsertPlaceholderCommand}" CommandParameter="{}{UserName}" Margin="0,0,6,6" Padding="8,4"/>
+                                    <Button Content="{}{DaysToExpire}" Command="{Binding SettingsVm.InsertPlaceholderCommand}" CommandParameter="{}{DaysToExpire}" Margin="0,0,6,6" Padding="8,4"/>
+                                    <Button Content="{}{ExpiryDate}" Command="{Binding SettingsVm.InsertPlaceholderCommand}" CommandParameter="{}{ExpiryDate}" Margin="0,0,6,6" Padding="8,4"/>
+                                    <Button Content="{}{LastPasswordSet}" Command="{Binding SettingsVm.InsertPlaceholderCommand}" CommandParameter="{}{LastPasswordSet}" Margin="0,0,6,6" Padding="8,4"/>
+                                    <Button Content="{}{CompanyName}" Command="{Binding SettingsVm.InsertPlaceholderCommand}" CommandParameter="{}{CompanyName}" Margin="0,0,6,6" Padding="8,4"/>
+                                </WrapPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <Button Content="Önizleme" Command="{Binding SettingsVm.PreviewTemplateCommand}" Padding="10,5" Margin="0,0,8,0"/>
+                                    <Button Content="Varsayılana Dön" Command="{Binding SettingsVm.ResetTemplateCommand}" Padding="10,5"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding SettingsVm.TemplatePreviewSubject}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                <TextBox Text="{Binding SettingsVm.TemplatePreviewBody}" IsReadOnly="True" AcceptsReturn="True"
+                                         TextWrapping="Wrap" Height="100" FontFamily="Consolas" FontSize="11" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Sistem / Otomasyon" Padding="10" Margin="0,0,0,10">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Çalışma modu:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <ComboBox Width="140"
+                                              ItemsSource="{Binding SettingsVm.OperationModes}"
+                                              SelectedItem="{Binding SettingsVm.Settings.System.OperationMode}"/>
+                                </StackPanel>
+                                <CheckBox Content="Otomatik tarama" IsChecked="{Binding SettingsVm.Settings.System.AutoScanEnabled}" Margin="0,0,0,6"/>
+                                <CheckBox Content="Otomatik gönderim (önizleme onayı beklemeden)" IsChecked="{Binding SettingsVm.Settings.System.AutoSendEnabled}" Margin="0,0,0,6"/>
+                                <CheckBox Content="Yönetici özet maili" IsChecked="{Binding SettingsVm.Settings.System.SendAdminSummary}" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="Zamanlama (HH:mm)" VerticalAlignment="Center" Width="140"/>
+                                    <TextBox Width="100" Text="{Binding SettingsVm.Settings.System.ScheduledTime, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Yönetici e-posta" VerticalAlignment="Center" Width="140"/>
+                                    <TextBox Width="280" Text="{Binding SettingsVm.Settings.System.AdminSummaryEmail, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <Button Content="Ayarları Kaydet" Command="{Binding SettingsVm.SaveCommand}"
+                                HorizontalAlignment="Left" Padding="16,8" Background="#1F4E79" Foreground="White"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Hakkında -->
+            <TabItem Header="4. Hakkında">
+                <Border Background="White" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="6" Margin="8" Padding="32">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="520">
+                        <Image Source="pack://application:,,,/Assets/diagram.png" Width="96" Height="96"
+                               Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                               HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                        <TextBlock Text="Password Expiry Notification" FontSize="22" FontWeight="SemiBold"
+                                   Foreground="#1F4E79" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Active Directory şifre dolum uyarı uygulaması" Foreground="#555"
+                                   HorizontalAlignment="Center" Margin="0,6,0,24"/>
+
+                        <TextBlock Text="Geliştirici" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8"/>
+                        <TextBlock Text="Mustafa Önder Aköz" FontSize="16" Margin="0,0,0,16"/>
+
+                        <TextBlock Text="E-posta" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Margin="0,0,0,16">
+                            <Hyperlink NavigateUri="mailto:onder7@gmail.com" RequestNavigate="Hyperlink_OnRequestNavigate">
+                                onder7@gmail.com
+                            </Hyperlink>
+                        </TextBlock>
+
+                        <TextBlock Text="LinkedIn" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock>
+                            <Hyperlink NavigateUri="https://www.linkedin.com/in/onderakoz/"
+                                       RequestNavigate="Hyperlink_OnRequestNavigate">
+                                https://www.linkedin.com/in/onderakoz/
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
