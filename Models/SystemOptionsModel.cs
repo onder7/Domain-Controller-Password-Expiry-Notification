@@ -26,7 +26,7 @@ public partial class SystemOptionsModel : ObservableObject
     private bool _sendAdminSummary = true;
 
     [ObservableProperty]
-    private string _adminSummaryEmail = "it@sirketiniz.com";
+    private string _adminSummaryEmail = "it@company.com";
 
     [ObservableProperty]
     private int _smtpDelayMilliseconds = 200;

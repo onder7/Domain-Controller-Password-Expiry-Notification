@@ -23,9 +23,9 @@ function Write-Log {
 Write-Log "Script başlatıldı."
 
 # E-posta ayarları
-$smtpServer    = "smtp.sirketiniz.com"
-$smtpPort      = 25
-$smtpFrom      = "it@sirketiniz.com"
+$smtpServer    = "your-smtp-server.com"
+$smtpPort      = 587
+$smtpFrom      = "noreply@company.com"
 $emailSubject  = "Önemli Bildirim: Şifreniz yakında sona erecek"
 $emailSignature = @"
 <p>Saygılarımızla,<br>
