@@ -5,7 +5,7 @@ Active Directory üzerinde şifresi dolmak üzere olan kullanıcıları tespit e
 ## Özellikler
 
 - ✅ **AD Entegrasyonu** — Active Directory'den şifre dolma tarihlerini otomatik tespit
-- ✅ **Otomatik Uyarı** — SMTP üzerinden e-posta gönderimi (Brevo/Sendinblue)
+- ✅ **Otomatik Uyarı** — SMTP üzerinden e-posta gönderimi
 - ✅ **GUI + Service Mode** — GUI arayüzü veya arkaplanda Windows Service olarak çalışma
 - ✅ **Zamanlama** — Belirtilen saatte günde 1x otomatik çalışma
 - ✅ **Headless CLI** — Task Scheduler ile otomatik tarama/gönderim
@@ -43,7 +43,7 @@ PasswordExpiryNotification.exe --scan --send
 
 - **.NET 8 WPF** — Windows masaüstü uygulaması
 - **Active Directory** — `System.DirectoryServices.AccountManagement`
-- **SMTP** — MailKit / MimeKit (Brevo/Sendinblue)
+- **SMTP** — MailKit / MimeKit
 - **Topshelf** — Windows Service hosting
 - **DPAPI** — Şifre şifreleme (LocalMachine scope)
 
@@ -54,17 +54,17 @@ PasswordExpiryNotification.exe --scan --send
 ```json
 {
   "Smtp": {
-    "Server": "smtp-relay.sendinblue.com",
+    "Server": "your-smtp-server.com",
     "Port": 587,
-    "FromAddress": "it@example.com",
-    "Username": "it@example.com",
+    "FromAddress": "noreply@company.com",
+    "Username": "smtp-username",
     "UseSsl": true
   },
   "System": {
     "OperationMode": "Automatic",
     "ScheduledTime": "06:00",
     "SendAdminSummary": true,
-    "AdminSummaryEmail": "admin@example.com"
+    "AdminSummaryEmail": "admin@company.com"
   }
 }
 ```

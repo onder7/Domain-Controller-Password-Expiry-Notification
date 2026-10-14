@@ -5,7 +5,7 @@ namespace PasswordExpiryNotification.Models;
 public partial class SmtpConfigModel : ObservableObject
 {
     [ObservableProperty]
-    private string _server = "smtp-relay.sendinblue.com";
+    private string _server = "your-smtp-server.com";
 
     [ObservableProperty]
     private int _port = 587;

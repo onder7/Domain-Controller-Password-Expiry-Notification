@@ -23,7 +23,7 @@ Write-Host ""
 Write-Host "[3] Ayarlar'dan SMTP şifresini GİR (boş alan):" -ForegroundColor Yellow
 Write-Host "  - Ayarlar sekmesine git" -ForegroundColor Gray
 Write-Host "  - SMTP bölümüne scroll et" -ForegroundColor Gray
-Write-Host "  - Şifre alanına Sendinblue'den kopyala" -ForegroundColor Gray
+Write-Host "  - Şifre alanına kurumsal SMTP şifrenizi kopyala" -ForegroundColor Gray
 Write-Host "  - SMTP Testi yap" -ForegroundColor Gray
 Write-Host "  - Kaydedildi → LocalMachine DPAPI ile encrypt edilir" -ForegroundColor Gray
 
