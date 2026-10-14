@@ -92,9 +92,9 @@ public partial class SettingsViewModel : ObservableObject
     {
         var sample = new UserModel
         {
-            DisplayName = "Ahmet Yılmaz",
-            UserName = "ahmet.yilmaz",
-            Email = "ahmet.yilmaz@sirketiniz.com",
+            DisplayName = "John Smith",
+            UserName = "john.smith",
+            Email = "john.smith@company.com",
             DaysToExpire = 7,
             MatchedWarningDay = 7,
             LastPasswordSet = DateTime.Today.AddDays(-83),
