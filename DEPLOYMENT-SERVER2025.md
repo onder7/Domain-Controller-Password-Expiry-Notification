@@ -1,21 +1,21 @@
 # Password Expiry Notification — Server 2025 Deployment
 
-Server 2025'te **otomatik arkaplan** SMTP uyarı sistemi kurma adımları.
+Windows Server 2025'te **otomatik arkaplan** SMTP uyarı sistemi kurma adımları.
 
 ---
 
 ## Adım 1: Uygulamayı Kopyala
 
-**Kaynak:** Kendi bilgisayarından derlenen `bin/Debug/net8.0-windows/`
+**Kaynak:** Derlenen `bin/Release/net8.0-windows/`
 **Hedef:** Server 2025'te `C:\Program Files\PasswordExpiryNotification\`
 
 ```powershell
 # Server 2025'te PowerShell (Admin)
 New-Item -ItemType Directory -Path "C:\Program Files\PasswordExpiryNotification" -Force
 
-# Kendi bilgisayarından uygulamayı kopyala
+# Release build uygulamasını kopyala
 Copy-Item `
-    -Path "C:\Users\OHOME\Documents\csharp\PasswordExpiryNotification\bin\Debug\net8.0-windows\*" `
+    -Path "C:\Users\OHOME\Documents\csharp\PasswordExpiryNotification\bin\Release\net8.0-windows\*" `
     -Destination "C:\Program Files\PasswordExpiryNotification" `
     -Recurse -Force
 ```
@@ -27,32 +27,52 @@ Copy-Item `
 **Bir kez GUI ile çalıştırıp ayarları kaydet:**
 
 ```powershell
-C:\Program Files\PasswordExpiryNotification\PasswordExpiryNotification.exe
+C:\Program Files\PasswordExpiryNotification\PasswordExpiryNotification.exe --gui
 ```
 
 **Ayarlar sekmesinde:**
-1. **SMTP:**
-   - Server: `smtp-relay.sendinblue.com`
-   - Port: `587`
-   - Gönderen: `it@corendon-airlines.com`
-   - Kullanıcı adı: `it@corendon-airlines.com`
-   - Şifre: *(Sendinblue'den kopyala)*
-   - SSL/TLS: ✓ (işaretli)
+
+### SMTP Yapılandırması
+1. **SMTP Sunucusu:**
+   - Server: Kurumsal SMTP sunucu adı (örn. `smtp.company.com`)
+   - Port: SMTP port (genellikle `587` veya `25`)
+   - Gönderen: SMTP ayrıcalıklı email adresi
+   - Kullanıcı adı: SMTP bağlantı kullanıcı adı
+   - Şifre: SMTP şifresi
+   - SSL/TLS: ✓ (işaretli - genellikle evet)
    - **SMTP Testi** yap → Başarılı olmalı
 
-2. **Sistem / Otomasyon:**
-   - Çalışma modu: **Automatic** ✓
+### AD Tarama Ayarları
+2. **Active Directory:**
+   - Domain: AD domain adı (örn. `company.local`)
+   - Varsayılan Şifre Yaşı: 90 (gün) - FGPP yoksa bu değer kullanılır
+   - Uyarı Günleri: Bildirim göndermek istediğiniz günleri seçin
+     - Örnek: 14, 7, 3, 1 (gün)
+   - Filtreler: İsteğe bağlı OU veya güvenlik grubu
+
+### Sistem Otomasyon
+3. **Çalışma Modu:**
+   - Seçenek 1 (Manuel): GUI açık iken, tarama sonrası önizleme ekranında onay gereklir
+   - Seçenek 2 (Otomatik): Belirli saatte otomatik tarama ve gönderim
+   
+4. **Otomatik Mod Ayarları** (Otomatik seçilirse):
    - Otomatik tarama: ✓
    - Otomatik gönderim: ✓
+   - Zamanlama saati: `06:00` (istediğiniz saat)
    - Yönetici özeti: ✓
-   - Zamanlama: `06:00` (istediğin saat)
-   - Yönetici maili: `it@corendon-airlines.com`
+   - Yönetici email: IT yöneticisinin email adresi
 
-3. **Uyarı Günleri:** İstediğin günleri seç (örn: 14, 7, 3, 1)
+### E-posta Şablonu
+5. **E-posta Şablonu Düzenleme:**
+   - Konu: Email başlığı (örn. `[{CompanyName}] Şifreniz {DaysToExpire} gün içinde sona erecek`)
+   - Gövde: HTML email içeriği
+   - Desteklenen parametreler: `{Name}`, `{UserName}`, `{DaysToExpire}`, `{ExpiryDate}`, `{LastPasswordSet}`, `{CompanyName}`
+   - Önizleme ile test etme
+   - Kendime test maili ile gerçek SMTP testi
 
-4. **Ayarları Kaydet** (Kaydedildi mesajını gör)
+6. **Ayarları Kaydet** (Kaydedildi mesajını gör)
 
-✅ `appsettings.json` şimdi **LocalMachine DPAPI** ile encrypt edilmiştir (herhangi bir user erişebilir).
+✅ Tüm ayarlar **LocalMachine DPAPI** ile encrypt edilerek `appsettings.json`'a kaydedilir (herhangi bir kullanıcı erişebilir).
 
 ---
 
@@ -135,7 +155,7 @@ $latestLog = Get-ChildItem "C:\Program Files\PasswordExpiryNotification\Logs\Pas
 Get-Content $latestLog.FullName -Tail 50
 ```
 
-**Windows Event Viewer'da da görebilirsin:**
+**Windows Event Viewer'da da görebilirsiniz:**
 - Event Viewer → Windows Logs → Application
 - Source: `.NET Runtime` veya uygulama adı
 - Hata varsa orada görünecek
@@ -156,19 +176,19 @@ Get-ScheduledTask -TaskName "PasswordExpiryNotification" | Get-ScheduledTaskInfo
 ```
 
 ### SMTP bağlantı hatası
-1. `appsettings.json` şifresi doğru mu? → GUI'den yeniden gir
+1. `appsettings.json` SMTP ayarları doğru mu? → GUI'den yeniden gir
 2. Server 2025 DNS çözümlüyor mu?
    ```powershell
-   nslookup smtp-relay.sendinblue.com
+   nslookup your-smtp-server.com
    ```
-3. Firewall outbound 587 açık mı?
+3. Firewall outbound 587 (veya kullandığınız port) açık mı?
 
 ### AD taraması başarısız
 1. Server 2025 domain'e katılı mı?
 2. `SYSTEM` user'ı AD'ye erişebiliyor mu?
    ```powershell
    whoami
-   nltest /dsgetdc:corendon.local
+   nltest /dsgetdc:domain.local
    ```
 
 ---
@@ -201,8 +221,8 @@ Get-ScheduledTask -TaskName "PasswordExpiryNotification" | Select-Object -Expand
 
 - **DPAPI LocalMachine:** Şifre `LocalMachine` DPAPI ile encrypt ediliyor, herhangi bir user erişebilir
 - **Headless Mode:** `--scan --send` flag'leri ile GUI açılmaz, terminal/log'a yazar
-- **Tekrar gönderim koruması:** *(Bilinen TODO — henüz implement edilmedi)*
-- **Yönetici özeti:** Her çalışmadan sonra özet mail gönderilir (ayarlardan etkinleştir)
+- **Tekrar gönderim koruması:** Aynı kullanıcıya aynı gün içinde tekrar bildirim gönderilmez
+- **Yönetici özeti:** Her otomatik çalışmadan sonra özet mail gönderilir (ayarlardan etkinleştir)
 
 ---
 
@@ -214,6 +234,15 @@ Kurulumu geri almak için:
 # Task'ı sil
 Unregister-ScheduledTask -TaskName "PasswordExpiryNotification" -Confirm:$false
 
-# Uygulaması sil (opsiyonel)
+# Uygulamayı sil (opsiyonel)
 Remove-Item -Path "C:\Program Files\PasswordExpiryNotification" -Recurse -Force
 ```
+
+---
+
+## Önemli Not
+
+Bu dokümantasyon şablon ve örnek olarak hazırlanmıştır. Üretim ortamında kurulum yaparken:
+- SMTP sunucu, port ve email adresleri **kurumsal değerlerle** değiştirilmelidir
+- Active Directory domain adı değiştirilmelidir
+- Yönetici email adresleri IT departmanı bilgileri ile güncellenmelidir

@@ -11,10 +11,10 @@ public partial class SmtpConfigModel : ObservableObject
     private int _port = 587;
 
     [ObservableProperty]
-    private string _fromAddress = "it@corendon-airlines.com";
+    private string _fromAddress = "noreply@company.com";
 
     [ObservableProperty]
-    private string _username = "it@corendon-airlines.com";
+    private string _username = "smtp-username";
 
     /// <summary>Plain password in memory only; persisted as PasswordProtected (DPAPI).</summary>
     [ObservableProperty]
