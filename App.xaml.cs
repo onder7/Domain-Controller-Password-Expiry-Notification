@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using PasswordExpiryNotification.Models;
 using PasswordExpiryNotification.Services;
 using PasswordExpiryNotification.ViewModels;
@@ -7,18 +7,21 @@ namespace PasswordExpiryNotification;
 
 public partial class App : Application
 {
-    // Remove default StartupUri to prevent automatic window creation
+    public static string[] StartupArgs { get; set; } = Array.Empty<string>();
+
     public App()
     {
-        // Don't auto-start MainWindow
-        this.StartupUri = null;
+        // MainWindow is created explicitly in OnStartup after services are initialized.
     }
 
     private ISchedulerService? _schedulerService;
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Use static StartupArgs passed from Program.cs
+        var args = StartupArgs.Length > 0 ? StartupArgs : e.Args.Cast<string>().ToArray();
 
         var log = new LogService();
         var settingsService = new SettingsService(log);
@@ -29,18 +32,18 @@ public partial class App : Application
         _schedulerService = schedulerService;
 
         // Headless mode kontrolü
-        if (HasHeadlessArgs(e.Args))
+        if (HasHeadlessArgs(args))
         {
             // CLI mode — GUI açma
-            RunHeadlessMode(log, settingsService, adService, emailService, e.Args);
-            Shutdown(0);
+            var exitCode = await RunHeadlessMode(log, settingsService, adService, emailService, args);
+            Environment.ExitCode = exitCode;
+            Shutdown(exitCode);
             return;
         }
 
         // Defensive check: if no special args and we're in service context, exit immediately
-        // This should not happen in normal operation, but protects against accidental WPF startup
-        if (!e.Args.Contains("--gui") && !e.Args.Contains("--scan") && 
-            !e.Args.Contains("--send") && !e.Args.Contains("--headless"))
+        if (!args.Contains("--gui") && !args.Contains("--scan") && 
+            !args.Contains("--send") && !args.Contains("--headless"))
         {
             // Service mode reached app by accident — should not happen
             log.Warning("Uygulamaya beklenmeyen başlatma: GUI başlatılmıyor.");
@@ -63,7 +66,7 @@ public partial class App : Application
     private static bool HasHeadlessArgs(string[] args) =>
         args.Contains("--scan") || args.Contains("--send") || args.Contains("--headless");
 
-    private static async void RunHeadlessMode(
+    private static async Task<int> RunHeadlessMode(
         ILogService log,
         ISettingsService settings,
         IAdService ad,
@@ -115,17 +118,27 @@ public partial class App : Application
   <em>Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıt vermeyiniz.</em>
 </p>
 </body></html>";
-                        await email.SendAsync(appSettings.Smtp, appSettings.System.AdminSummaryEmail, adminSubject, adminBody);
+                        var adminResult = await email.SendAsync(
+                            appSettings.Smtp,
+                            appSettings.System.AdminSummaryEmail,
+                            adminSubject,
+                            adminBody);
+
+                        if (adminResult.Success)
+                            log.Info($"Yönetici özeti gönderildi: {appSettings.System.AdminSummaryEmail}");
+                        else
+                            log.Error($"Yönetici özeti gönderilemedi ({appSettings.System.AdminSummaryEmail}): {adminResult.Message}");
                     }
                 }
             }
 
             log.Info("=== Headless Mode Tamamlandı ===");
+            return 0;
         }
         catch (Exception ex)
         {
             log.Error($"Headless Mode Hatası: {ex.Message}");
-            Environment.Exit(1);
+            return 1;
         }
     }
 

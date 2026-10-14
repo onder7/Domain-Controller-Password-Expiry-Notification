@@ -9,6 +9,10 @@ class Program
     [STAThread]
     static int Main(string[] args)
     {
+        // Parametresiz çalıştırma kullanıcı beklentisine uygun olarak GUI'yi açar.
+        if (args.Length == 0)
+            return StartWpfApp(new[] { "--gui" });
+
         // Check for command-line arguments before starting WPF
         if (args.Contains("--gui"))
         {
@@ -30,14 +34,28 @@ class Program
     {
         try
         {
-            var app = new App { StartupUri = new Uri("MainWindow.xaml", UriKind.Relative) };
+            var app = new App();
+            // Don't set StartupUri here — App constructor handles it
             app.InitializeComponent();
+            
+            // Pass args to App via static property so OnStartup can access them
+            App.StartupArgs = args;
+            
             return app.Run();
         }
         catch (Exception ex)
         {
-            var log = new LogService();
-            log.Error($"WPF uygulama hatası: {ex.Message}");
+            // Hata mesajını konsola direkt yaz (debug için)
+            System.Console.WriteLine($"ERROR: {ex.Message}");
+            System.Console.WriteLine($"StackTrace: {ex.StackTrace}");
+            
+            try
+            {
+                var log = new LogService();
+                log.Error($"WPF uygulama hatası: {ex.Message}\n{ex.StackTrace}");
+            }
+            catch { }
+            
             return 1;
         }
     }

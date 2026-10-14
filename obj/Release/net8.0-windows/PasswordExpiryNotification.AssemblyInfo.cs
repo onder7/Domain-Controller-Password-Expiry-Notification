@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PasswordExpiryNotification")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c182c33ca8c1443efef92556bd84981de00702fe")]
 [assembly: System.Reflection.AssemblyProductAttribute("PasswordExpiryNotification")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PasswordExpiryNotification")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

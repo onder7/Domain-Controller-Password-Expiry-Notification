@@ -19,7 +19,10 @@ public sealed class SettingsService : ISettingsService
     public SettingsService(ILogService log)
     {
         _log = log;
-        SettingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        var dataDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "PasswordExpiryNotification");
+        SettingsPath = Path.Combine(dataDirectory, "appsettings.json");
     }
 
     public string SettingsPath { get; }
@@ -31,14 +34,22 @@ public sealed class SettingsService : ISettingsService
 
         try
         {
-            if (!File.Exists(SettingsPath))
+            var sourcePath = SettingsPath;
+            var legacyPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+            if (!File.Exists(sourcePath) && File.Exists(legacyPath))
+            {
+                sourcePath = legacyPath;
+                _log.Info($"Mevcut ayarlar eski konumdan okunuyor: {legacyPath}");
+            }
+
+            if (!File.Exists(sourcePath))
             {
                 _log.Warning($"Ayar dosyası bulunamadı, varsayılanlar kullanılıyor: {SettingsPath}");
                 Save(settings);
                 return settings;
             }
 
-            var json = File.ReadAllText(SettingsPath);
+            var json = File.ReadAllText(sourcePath);
             var dto = JsonSerializer.Deserialize<AppSettingsDto>(json, JsonOptions) ?? new AppSettingsDto();
             MapFromDto(dto, settings);
             settings.Smtp.Password = DpapiProtectionService.Unprotect(settings.Smtp.PasswordProtected);
@@ -59,9 +70,12 @@ public sealed class SettingsService : ISettingsService
         {
             if (!string.IsNullOrEmpty(settings.Smtp.Password))
                 settings.Smtp.PasswordProtected = DpapiProtectionService.Protect(settings.Smtp.Password);
+            else
+                settings.Smtp.PasswordProtected = string.Empty;
 
             var dto = MapToDto(settings);
             var json = JsonSerializer.Serialize(dto, JsonOptions);
+            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
             File.WriteAllText(SettingsPath, json);
             _log.Info("Ayarlar kaydedildi.");
         }

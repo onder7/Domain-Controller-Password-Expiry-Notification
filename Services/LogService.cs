@@ -15,7 +15,13 @@ public sealed class LogService : ILogService
 
     public void Configure(string logDirectory)
     {
-        _logDirectory = string.IsNullOrWhiteSpace(logDirectory) ? "Logs" : logDirectory;
+        var configuredDirectory = string.IsNullOrWhiteSpace(logDirectory) ? "Logs" : logDirectory;
+        _logDirectory = Path.IsPathRooted(configuredDirectory)
+            ? configuredDirectory
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "PasswordExpiryNotification",
+                configuredDirectory);
     }
 
     public void Info(string message) => Write("INFO", message);

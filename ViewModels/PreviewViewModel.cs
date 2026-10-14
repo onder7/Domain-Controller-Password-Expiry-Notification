@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Net;
 using PasswordExpiryNotification.Models;
 using PasswordExpiryNotification.Services;
 
@@ -88,6 +89,24 @@ public partial class PreviewViewModel : ObservableObject
 
             _main.StatusText = $"Gönderim bitti. Başarılı: {result.SuccessCount}, Hatalı: {result.FailCount}";
             _log.Info(_main.StatusText);
+
+            if (_main.Settings.System.SendAdminSummary &&
+                !string.IsNullOrWhiteSpace(_main.Settings.System.AdminSummaryEmail))
+            {
+                var adminSubject = $"[Özet] Şifre Dolma Uyarısı Gönderimi - {DateTime.Now:yyyy-MM-dd HH:mm}";
+                var adminBody = BuildAdminSummaryHtml(recipients, result.SuccessCount, result.FailCount);
+                var adminResult = await _emailService.SendAsync(
+                    _main.Settings.Smtp,
+                    _main.Settings.System.AdminSummaryEmail,
+                    adminSubject,
+                    adminBody).ConfigureAwait(true);
+
+                if (adminResult.Success)
+                    _log.Info($"Yönetici özeti gönderildi: {_main.Settings.System.AdminSummaryEmail}");
+                else
+                    _log.Error($"Yönetici özeti gönderilemedi ({_main.Settings.System.AdminSummaryEmail}): {adminResult.Message}");
+            }
+
             OnPropertyChanged(nameof(SummaryText));
         }
         catch (Exception ex)
@@ -99,5 +118,39 @@ public partial class PreviewViewModel : ObservableObject
         {
             _main.IsBusy = false;
         }
+    }
+
+    private static string BuildAdminSummaryHtml(
+        IReadOnlyList<UserModel> users,
+        int successCount,
+        int failCount)
+    {
+        var rows = string.Join(Environment.NewLine, users.Select(user => $"""
+            <tr>
+              <td style="padding:8px;border:1px solid #ddd;">{WebUtility.HtmlEncode(user.DisplayName)}</td>
+              <td style="padding:8px;border:1px solid #ddd;">{WebUtility.HtmlEncode(user.Email)}</td>
+              <td style="padding:8px;border:1px solid #ddd;text-align:center;">{user.DaysToExpire}</td>
+            </tr>
+            """));
+
+        return $"""
+            <html><body style="font-family:Arial,sans-serif;color:#333;">
+            <h2>Şifre Dolma Uyarısı — Gönderim Özeti</h2>
+            <ul>
+              <li><strong>Başarılı:</strong> {successCount}</li>
+              <li><strong>Hatalı:</strong> {failCount}</li>
+              <li><strong>Toplam:</strong> {users.Count}</li>
+              <li><strong>Tarih/Saat:</strong> {DateTime.Now:G}</li>
+            </ul>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:#1F4E79;color:white;">
+                <th style="padding:8px;text-align:left;">Kullanıcı</th>
+                <th style="padding:8px;text-align:left;">E-posta</th>
+                <th style="padding:8px;text-align:center;">Kalan Gün</th>
+              </tr></thead>
+              <tbody>{rows}</tbody>
+            </table>
+            </body></html>
+            """;
     }
 }

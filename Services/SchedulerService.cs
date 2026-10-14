@@ -172,7 +172,16 @@ public sealed class SchedulerService : ISchedulerService, IDisposable
   <em>Bu e-posta otomatik olarak gönderilmiştir. Lütfen yanıt vermeyiniz.</em>
 </p>
 </body></html>";
-                        await _emailService.SendAsync(_currentSettings.Smtp, _currentSettings.System.AdminSummaryEmail, adminSubject, adminBody);
+                        var adminResult = await _emailService.SendAsync(
+                            _currentSettings.Smtp,
+                            _currentSettings.System.AdminSummaryEmail,
+                            adminSubject,
+                            adminBody);
+
+                        if (adminResult.Success)
+                            _log.Info($"Yönetici özeti gönderildi: {_currentSettings.System.AdminSummaryEmail}");
+                        else
+                            _log.Error($"Yönetici özeti gönderilemedi ({_currentSettings.System.AdminSummaryEmail}): {adminResult.Message}");
                     }
 
                     OnSendCompleted?.Invoke(this, new SchedulerSendCompletedEventArgs
