@@ -1,0 +1,40 @@
+# Build and compiler directories
+bin/
+obj/
+publish/
+
+# Build output
+*.dll
+*.exe
+*.pdb
+*.so
+*.dylib
+
+# IDE
+.vscode/
+.vs/
+*.user
+*.sln.iml
+.idea/
+
+# Logs and artifacts
+Logs/
+*.log
+
+# DPAPI encrypted settings (contain sensitive data)
+# Note: appsettings.json is committed with generic values only
+# Deploy to production and configure with actual credentials via GUI
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+~*
+
+# NuGet
+.nuget/
+packages/
+*.nupkg
